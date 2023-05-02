@@ -1,0 +1,167 @@
+<html>
+<head>
+<title>GameBoardView.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6897bb;}
+.s3 { color: #808080;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+GameBoardView.java</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">com.example.learn2</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">android.app.Activity</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.content.Context</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.graphics.Bitmap</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.graphics.Canvas</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.graphics.Color</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.graphics.Paint</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.graphics.RectF</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.util.AttributeSet</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.view.MotionEvent</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.view.View</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.widget.TextView</span><span class="s0">;</span>
+
+<span class="s0">public class </span><span class="s1">GameBoardView </span><span class="s0">extends </span><span class="s1">View {</span>
+
+    <span class="s0">private static final int </span><span class="s1">NUM_ROWS = </span><span class="s2">6</span><span class="s0">;</span>
+    <span class="s0">private static final int </span><span class="s1">NUM_COLUMNS = </span><span class="s2">6</span><span class="s0">;</span>
+
+    <span class="s0">private final </span><span class="s1">Paint cellPaint</span><span class="s0">;</span>
+    <span class="s0">private final </span><span class="s1">Paint gridPaint</span><span class="s0">;</span>
+
+    <span class="s0">private </span><span class="s1">Cell[][] cells</span><span class="s0">;</span>
+
+    <span class="s0">private int </span><span class="s1">viewWidth</span><span class="s0">;</span>
+    <span class="s0">private int </span><span class="s1">viewHeight</span><span class="s0">;</span>
+
+    <span class="s3">// Declare a Bitmap object and a Canvas object</span>
+    <span class="s0">private </span><span class="s1">Bitmap mBitmap</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">Paint mBitmapPaint</span><span class="s0">;</span>
+
+
+
+    <span class="s0">public </span><span class="s1">GameBoardView(Context context</span><span class="s0">, </span><span class="s1">AttributeSet attrs) {</span>
+        <span class="s0">super</span><span class="s1">(context</span><span class="s0">, </span><span class="s1">attrs)</span><span class="s0">;</span>
+
+<span class="s3">//        mBitmap = Bitmap.createBitmap(viewWidth, viewHeight, Bitmap.Config.ARGB_8888);</span>
+        <span class="s1">mBitmapPaint = </span><span class="s0">new </span><span class="s1">Paint()</span><span class="s0">;</span>
+
+        <span class="s3">// Initialize the paint objects</span>
+        <span class="s1">cellPaint = </span><span class="s0">new </span><span class="s1">Paint()</span><span class="s0">;</span>
+        <span class="s1">cellPaint.setColor(Color.WHITE)</span><span class="s0">;</span>
+
+        <span class="s1">gridPaint = </span><span class="s0">new </span><span class="s1">Paint()</span><span class="s0">;</span>
+        <span class="s1">gridPaint.setColor(Color.BLACK)</span><span class="s0">;</span>
+        <span class="s1">gridPaint.setStrokeWidth(</span><span class="s2">3</span><span class="s1">)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">protected void </span><span class="s1">onMeasure(</span><span class="s0">int </span><span class="s1">widthMeasureSpec</span><span class="s0">, int </span><span class="s1">heightMeasureSpec) {</span>
+        <span class="s3">// Calculate the required size of the view based on the number of cells and the size of each cell</span>
+        <span class="s0">int </span><span class="s1">cellSize = Math.min(MeasureSpec.getSize(widthMeasureSpec) / NUM_COLUMNS</span><span class="s0">, </span><span class="s1">MeasureSpec.getSize(heightMeasureSpec) / NUM_ROWS)</span><span class="s0">;</span>
+        <span class="s0">int </span><span class="s1">width = cellSize * NUM_COLUMNS</span><span class="s0">;</span>
+        <span class="s0">int </span><span class="s1">height = cellSize * NUM_ROWS</span><span class="s0">;</span>
+
+        <span class="s3">// Set the dimensions of the view</span>
+        <span class="s1">setMeasuredDimension(width</span><span class="s0">, </span><span class="s1">height)</span><span class="s0">;</span>
+
+        <span class="s3">// Save the dimensions of the view</span>
+        <span class="s1">viewWidth = width</span><span class="s0">;</span>
+        <span class="s1">viewHeight = height</span><span class="s0">;</span>
+
+        <span class="s3">// Create the cells</span>
+        <span class="s1">cells = </span><span class="s0">new </span><span class="s1">Cell[NUM_ROWS][NUM_COLUMNS]</span><span class="s0">;</span>
+        <span class="s0">for </span><span class="s1">(</span><span class="s0">int </span><span class="s1">row = </span><span class="s2">0</span><span class="s0">; </span><span class="s1">row &lt; NUM_ROWS</span><span class="s0">; </span><span class="s1">row++) {</span>
+            <span class="s0">for </span><span class="s1">(</span><span class="s0">int </span><span class="s1">col = </span><span class="s2">0</span><span class="s0">; </span><span class="s1">col &lt; NUM_COLUMNS</span><span class="s0">; </span><span class="s1">col++) {</span>
+                <span class="s1">cells[row][col] = </span><span class="s0">new </span><span class="s1">Cell(row</span><span class="s0">, </span><span class="s1">col</span><span class="s0">, </span><span class="s1">col * cellSize</span><span class="s0">, </span><span class="s1">row * cellSize</span><span class="s0">, </span><span class="s1">cellSize)</span><span class="s0">;</span>
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">protected void </span><span class="s1">onDraw(Canvas canvas) {</span>
+        <span class="s0">super</span><span class="s1">.onDraw(canvas)</span><span class="s0">;</span>
+
+        <span class="s3">// Set the background color of the board</span>
+        <span class="s1">canvas.drawColor(Color.BLUE)</span><span class="s0">;</span>
+
+        <span class="s0">float </span><span class="s1">mCornerRadius = </span><span class="s2">20f</span><span class="s0">; </span><span class="s3">// The radius of the corners</span>
+        <span class="s1">RectF mRect = </span><span class="s0">new </span><span class="s1">RectF()</span><span class="s0">; </span><span class="s3">// A reusable RectF object</span>
+
+        <span class="s3">// Draw the cells</span>
+        <span class="s0">for </span><span class="s1">(</span><span class="s0">int </span><span class="s1">i = </span><span class="s2">0</span><span class="s0">; </span><span class="s1">i &lt; NUM_ROWS</span><span class="s0">; </span><span class="s1">i++) {</span>
+            <span class="s0">for </span><span class="s1">(</span><span class="s0">int </span><span class="s1">j = </span><span class="s2">0</span><span class="s0">; </span><span class="s1">j &lt; NUM_COLUMNS</span><span class="s0">; </span><span class="s1">j++) {</span>
+                <span class="s1">Cell cell = cells[i][j]</span><span class="s0">;</span>
+                <span class="s1">mRect.set(cell.getLeft()</span><span class="s0">, </span><span class="s1">cell.getTop()</span><span class="s0">, </span><span class="s1">cell.getRight()</span><span class="s0">, </span><span class="s1">cell.getBottom())</span><span class="s0">;</span>
+                <span class="s1">canvas.drawRoundRect(mRect</span><span class="s0">, </span><span class="s1">mCornerRadius</span><span class="s0">, </span><span class="s1">mCornerRadius</span><span class="s0">, </span><span class="s1">cellPaint)</span><span class="s0">;</span>
+
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+
+        <span class="s3">// Draw the grid lines</span>
+        <span class="s0">for </span><span class="s1">(</span><span class="s0">int </span><span class="s1">i = </span><span class="s2">0</span><span class="s0">; </span><span class="s1">i &lt;= NUM_COLUMNS</span><span class="s0">; </span><span class="s1">i++) {</span>
+            <span class="s0">int </span><span class="s1">x = i * cells[</span><span class="s2">0</span><span class="s1">][</span><span class="s2">0</span><span class="s1">].getCellSize()</span><span class="s0">;</span>
+            <span class="s1">canvas.drawLine(x</span><span class="s0">, </span><span class="s2">0</span><span class="s0">, </span><span class="s1">x</span><span class="s0">, </span><span class="s1">viewHeight</span><span class="s0">, </span><span class="s1">gridPaint)</span><span class="s0">;</span>
+        <span class="s1">}</span>
+        <span class="s0">for </span><span class="s1">(</span><span class="s0">int </span><span class="s1">i = </span><span class="s2">0</span><span class="s0">; </span><span class="s1">i &lt;= NUM_ROWS</span><span class="s0">; </span><span class="s1">i++) {</span>
+            <span class="s0">int </span><span class="s1">y = i * cells[</span><span class="s2">0</span><span class="s1">][</span><span class="s2">0</span><span class="s1">].getCellSize()</span><span class="s0">;</span>
+            <span class="s1">canvas.drawLine(</span><span class="s2">0</span><span class="s0">, </span><span class="s1">y</span><span class="s0">, </span><span class="s1">viewWidth</span><span class="s0">, </span><span class="s1">y</span><span class="s0">, </span><span class="s1">gridPaint)</span><span class="s0">;</span>
+        <span class="s1">}</span>
+
+        <span class="s3">// Draw the cells</span>
+        <span class="s0">for </span><span class="s1">(</span><span class="s0">int </span><span class="s1">i = </span><span class="s2">0</span><span class="s0">; </span><span class="s1">i &lt; NUM_ROWS</span><span class="s0">; </span><span class="s1">i++) {</span>
+            <span class="s0">for </span><span class="s1">(</span><span class="s0">int </span><span class="s1">j = </span><span class="s2">0</span><span class="s0">; </span><span class="s1">j &lt; NUM_COLUMNS</span><span class="s0">; </span><span class="s1">j++) {</span>
+                <span class="s0">if </span><span class="s1">(cells[i][j].isOccupied()) {</span>
+                    <span class="s1">TextView textView = (TextView) ((Activity) getContext()).findViewById(R.id.textView)</span><span class="s0">;</span>
+                    <span class="s1">textView.setText(</span><span class="s4">&quot;Cell pressed: at (&quot;</span><span class="s1">+ cells[i][j].getRow() + </span><span class="s4">&quot;)&quot;</span><span class="s1">+ </span><span class="s4">&quot; (&quot; </span><span class="s1">+ cells[i][j].getCol() + </span><span class="s4">&quot;)&quot;</span><span class="s1">)</span><span class="s0">;</span>
+                    <span class="s1">canvas.drawCircle(cells[i][j].getLeft()+cells[i][j].getCenter()</span><span class="s0">, </span><span class="s1">cells[i][j].getTop() +cells[i][j].getCenter()</span><span class="s0">, </span><span class="s1">(cells[i][j].getCellSize() / </span><span class="s2">2f</span><span class="s1">) - (cells[i][j].getCellSize()*</span><span class="s2">0.06f</span><span class="s1">)</span>
+                            <span class="s0">, </span><span class="s1">cells[i][j].getCirclePaint())</span><span class="s0">;</span>
+                <span class="s1">}</span>
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+
+    <span class="s1">@Override</span>
+    <span class="s0">public boolean </span><span class="s1">onTouchEvent(MotionEvent event) {</span>
+        <span class="s0">int </span><span class="s1">action = event.getActionMasked()</span><span class="s0">;</span>
+        <span class="s0">if </span><span class="s1">(action == MotionEvent.ACTION_DOWN) {</span>
+            <span class="s3">// Get the touch coordinates</span>
+            <span class="s0">float </span><span class="s1">x = event.getX()</span><span class="s0">;</span>
+            <span class="s0">float </span><span class="s1">y = event.getY()</span><span class="s0">;</span>
+
+            <span class="s3">// Determine the row and column of the cell that was touched</span>
+            <span class="s0">int </span><span class="s1">row = (</span><span class="s0">int</span><span class="s1">) (y / getHeight() * NUM_ROWS)</span><span class="s0">;</span>
+            <span class="s0">int </span><span class="s1">column = (</span><span class="s0">int</span><span class="s1">) (x / getWidth() * NUM_COLUMNS)</span><span class="s0">;</span>
+
+            <span class="s3">// Update the last touched cell</span>
+            <span class="s1">cells[row][column].setOccupied(</span><span class="s0">true</span><span class="s1">)</span><span class="s0">;</span>
+
+            <span class="s3">// Call performClick() to handle the click event</span>
+            <span class="s1">performClick()</span><span class="s0">;</span>
+
+            <span class="s1">invalidate()</span><span class="s0">;</span>
+            <span class="s0">return true;</span>
+        <span class="s1">}</span>
+
+        <span class="s0">return super</span><span class="s1">.onTouchEvent(event)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">public boolean </span><span class="s1">performClick() {</span>
+        <span class="s0">super</span><span class="s1">.performClick()</span><span class="s0">;</span>
+        <span class="s0">return true;</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+</pre>
+</body>
+</html>

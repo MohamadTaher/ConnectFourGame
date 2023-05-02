@@ -1,0 +1,113 @@
+<html>
+<head>
+<title>Cell.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #808080;}
+.s3 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Cell.java</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">com.example.learn2</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">android.graphics.Color</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.graphics.Paint</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.graphics.RectF</span><span class="s0">;</span>
+
+<span class="s0">public class </span><span class="s1">Cell {</span>
+
+    <span class="s0">private final int </span><span class="s1">row</span><span class="s0">;</span>
+    <span class="s0">private final int </span><span class="s1">col</span><span class="s0">;</span>
+
+    <span class="s0">private final int </span><span class="s1">cellSize</span><span class="s0">;</span>
+    <span class="s0">private boolean </span><span class="s1">occupied</span><span class="s0">;</span>
+    <span class="s0">private final int </span><span class="s1">left</span><span class="s0">;</span>
+    <span class="s0">private final int </span><span class="s1">top</span><span class="s0">;</span>
+
+    <span class="s0">private int </span><span class="s1">color</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">RectF cellShape</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">RectF circleShape</span><span class="s0">;</span>
+
+    <span class="s0">public </span><span class="s1">Cell(</span><span class="s0">int </span><span class="s1">row</span><span class="s0">, int </span><span class="s1">col</span><span class="s0">, int </span><span class="s1">left</span><span class="s0">, int </span><span class="s1">top</span><span class="s0">, int </span><span class="s1">cellSize) {</span>
+        <span class="s0">this</span><span class="s1">.row = row</span><span class="s0">;</span>
+        <span class="s0">this</span><span class="s1">.col = col</span><span class="s0">;</span>
+        <span class="s0">this</span><span class="s1">.left = left</span><span class="s0">;</span>
+        <span class="s0">this</span><span class="s1">.top = top</span><span class="s0">;</span>
+        <span class="s0">this</span><span class="s1">.cellSize = cellSize</span><span class="s0">;</span>
+        <span class="s0">this</span><span class="s1">.occupied = </span><span class="s0">false;</span>
+        <span class="s0">this</span><span class="s1">.color = Color.WHITE</span><span class="s0">; </span><span class="s2">// default color is white</span>
+
+        <span class="s1">cellShape = </span><span class="s0">new </span><span class="s1">RectF(left</span><span class="s0">, </span><span class="s1">top</span><span class="s0">, </span><span class="s1">left + cellSize</span><span class="s0">, </span><span class="s1">top + cellSize)</span><span class="s0">;</span>
+        <span class="s1">circleShape = </span><span class="s0">new </span><span class="s1">RectF(left + cellSize / </span><span class="s3">4</span><span class="s0">, </span><span class="s1">top + cellSize / </span><span class="s3">4</span><span class="s0">, </span><span class="s1">left + </span><span class="s3">3 </span><span class="s1">* cellSize / </span><span class="s3">4</span><span class="s0">, </span><span class="s1">top + </span><span class="s3">3 </span><span class="s1">* cellSize / </span><span class="s3">4</span><span class="s1">)</span><span class="s0">;</span>
+
+    <span class="s1">}</span>
+    <span class="s0">public </span><span class="s1">RectF getCircleShape() {</span>
+        <span class="s0">return </span><span class="s1">circleShape</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public </span><span class="s1">Paint getCirclePaint() {</span>
+        <span class="s1">Paint paint = </span><span class="s0">new </span><span class="s1">Paint()</span><span class="s0">;</span>
+        <span class="s1">paint.setColor(Color.RED)</span><span class="s0">;</span>
+        <span class="s1">paint.setStyle(Paint.Style.FILL)</span><span class="s0">;</span>
+        <span class="s0">return </span><span class="s1">paint</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getCenter(){</span>
+        <span class="s0">return </span><span class="s1">cellSize / </span><span class="s3">2</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getCellSize() {</span>
+        <span class="s0">return </span><span class="s1">cellSize</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getRow() {</span>
+        <span class="s0">return </span><span class="s1">row</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getCol() {</span>
+        <span class="s0">return </span><span class="s1">col</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public boolean </span><span class="s1">isOccupied() {</span>
+        <span class="s0">return </span><span class="s1">occupied</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public void </span><span class="s1">setOccupied(</span><span class="s0">boolean </span><span class="s1">occupied) {</span>
+        <span class="s0">this</span><span class="s1">.occupied = occupied</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getColor() {</span>
+        <span class="s0">return </span><span class="s1">color</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public void </span><span class="s1">setColor(</span><span class="s0">int </span><span class="s1">color) {</span>
+        <span class="s0">this</span><span class="s1">.color = color</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getLeft() {</span>
+        <span class="s0">return </span><span class="s1">left</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getTop() {</span>
+        <span class="s0">return </span><span class="s1">top</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getRight() {</span>
+        <span class="s0">return </span><span class="s1">left + cellSize</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">public int </span><span class="s1">getBottom() {</span>
+        <span class="s0">return </span><span class="s1">top + cellSize</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+<span class="s1">}</span>
+</pre>
+</body>
+</html>
