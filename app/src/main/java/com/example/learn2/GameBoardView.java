@@ -6,10 +6,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class GameBoardView extends View {
 
@@ -17,15 +19,24 @@ public class GameBoardView extends View {
     private static final int NUM_COLUMNS = 6;
 
     private final Paint cellPaint, gridPaint;
+    private final Cell[][] cells;
+    private final Handler handler = new Handler();
+    private final Runnable updateCircle = // redraw the view
+            this::invalidate;
+    public boolean finishedDrawing;
     RectF mRect; // A reusable RectF object
-
-    private final Cell[][] cells = new Cell[NUM_ROWS][NUM_COLUMNS];;
+    int currentY;
+    int targetY;
     private int viewWidth, viewHeight;
 
     public GameBoardView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
+
         mRect = new RectF();
+        cells = new Cell[NUM_ROWS][NUM_COLUMNS];
+
+        finishedDrawing = true;
 
         cellPaint = new Paint();
         cellPaint.setColor(Color.WHITE);
@@ -50,6 +61,7 @@ public class GameBoardView extends View {
         int width = cellSize * NUM_COLUMNS;
         int height = cellSize * NUM_ROWS;
 
+
         for (int row = 0; row < NUM_ROWS; row++) {
             for (int col = 0; col < NUM_COLUMNS; col++) {
                 cells[row][col].updateCellSize(cellSize);
@@ -73,7 +85,7 @@ public class GameBoardView extends View {
 
         float mCornerRadius = 20f; // The radius of the corners
 
-        // Draw the cells
+        // Draw the blue stars
         for (int i = 0; i < NUM_ROWS; i++) {
             for (int j = 0; j < NUM_COLUMNS; j++) {
                 Cell cell = cells[i][j];
@@ -85,32 +97,65 @@ public class GameBoardView extends View {
 
         // Draw the grid lines
         for (int i = 0; i <= NUM_COLUMNS; i++) {
-            int x = i * cells[0][0].getCellSize();
+            int x;
+            if (i == 0) {
+                x = (int) (cells[0][0].getCellSize() * 0.01f);
+            } else {
+                x = i * cells[0][0].getCellSize();
+            }
             canvas.drawLine(x, 0, x, viewHeight, gridPaint);
         }
         for (int i = 0; i <= NUM_ROWS; i++) {
-            int y = i * cells[0][0].getCellSize();
-            canvas.drawLine(0, y, viewWidth, y, gridPaint);
+            int y;
+            if (i == NUM_ROWS) {
+                y = i * cells[0][0].getCellSize() - (int) (cells[0][0].getCellSize() * 0.005f);
+            } else if (i == 0) {
+                y = (int) (cells[0][0].getCellSize() * 0.01f);
+            } else {
+                y = i * cells[0][0].getCellSize();
+            }
+            canvas.drawLine(0, y, cells[0][0].getCellSize() * NUM_COLUMNS, y, gridPaint);
         }
 
         // Draw the cells
         for (int i = 0; i < NUM_ROWS; i++) {
             for (int j = 0; j < NUM_COLUMNS; j++) {
                 if (cells[i][j].isOccupied()) {
-                    TextView textView = (TextView) ((Activity) getContext()).findViewById(R.id.textView);
-                    textView.setText("Cell pressed: at ("+ cells[i][j].getRow() + ")"+ " (" + cells[i][j].getCol() + ")");
-                    canvas.drawCircle(cells[i][j].getLeft()+cells[i][j].getCenter(), cells[i][j].getTop() +cells[i][j].getCenter(),
-                                      (cells[i][j].getCellSize() / 2f) - (cells[i][j].getCellSize()*0.06f), cells[i][j].getCirclePaint());
+                    canvas.drawCircle(cells[i][j].getLeft() + cells[i][j].getCenter(), cells[i][j].getTop() + cells[i][j].getCenter(), (cells[i][j].getCellSize() / 2f) - (cells[i][j].getCellSize() * 0.06f), cells[i][j].getCirclePaint());
                 }
             }
         }
-    }
 
+        if (Cell.lastMovePlayed) {
+            TextView textView = ((Activity) getContext()).findViewById(R.id.textView);
+
+            int i = Cell.getLastRow();
+            int j = Cell.getLastColumn();
+
+            if (cells[i][j].getY() == cells[0][j].getY()) {
+                canvas.drawCircle(cells[i][j].getLeft() + cells[i][j].getCenter(), cells[i][j].getTop() + cells[i][j].getCenter(), (cells[i][j].getCellSize() / 2f) - (cells[i][j].getCellSize() * 0.06f), cells[i][j].getCirclePaint());
+                cells[i][j].setOccupied(true);
+                finishedDrawing = true;
+                textView.setText("topY:" + currentY + ", yClicked:" + targetY);
+            } else if (currentY < targetY) {
+                currentY += 50;
+                canvas.drawCircle(cells[i][j].getLeft() + cells[i][j].getCenter(), currentY * 1.65f, (cells[i][j].getCellSize() / 2f) - (cells[i][j].getCellSize() * 0.06f), cells[i][j].getCirclePaint2());
+                handler.postDelayed(updateCircle, 16); // wait for 50 milliseconds before redrawing the view
+            } else if (targetY <= currentY) {
+                canvas.drawCircle(cells[i][j].getLeft() + cells[i][j].getCenter(), cells[i][j].getTop() + cells[i][j].getCenter(), (cells[i][j].getCellSize() / 2f) - (cells[i][j].getCellSize() * 0.06f), cells[i][j].getCirclePaint2());
+                createToast("finished");
+                cells[i][j].setOccupied(true);
+                finishedDrawing = true;
+            }
+
+        }
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked();
-        if (action == MotionEvent.ACTION_DOWN) {
+        if (action == MotionEvent.ACTION_DOWN && finishedDrawing) {
+            finishedDrawing = false;
             // Get the touch coordinates
             float x = event.getX();
             float y = event.getY();
@@ -119,8 +164,14 @@ public class GameBoardView extends View {
             int row = (int) (y / getHeight() * NUM_ROWS);
             int column = (int) (x / getWidth() * NUM_COLUMNS);
 
-            // Update the last touched cell
-            cells[row][column].setOccupied(true);
+            currentY = -cells[0][column].getY();
+            targetY = cells[row][column].getY();
+
+
+            Cell.setLastMove(row, column);
+
+            TextView textView = ((Activity) getContext()).findViewById(R.id.textView);
+            textView.setText("Cell pressed: (" + cells[row][column].getRow() + ")" + " (" + cells[row][column].getCol() + ")");
 
             // Call performClick() to handle the click event
             performClick();
@@ -136,5 +187,12 @@ public class GameBoardView extends View {
     public boolean performClick() {
         super.performClick();
         return true;
+    }
+
+    public void createToast(String output) {
+        Context context = getContext();
+        int duration = Toast.LENGTH_SHORT;
+        Toast toast = Toast.makeText(context, output, duration);
+        toast.show();
     }
 }

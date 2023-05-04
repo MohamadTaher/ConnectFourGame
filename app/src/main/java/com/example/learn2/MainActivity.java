@@ -1,10 +1,10 @@
 package com.example.learn2;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -14,12 +14,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-
     }
 
-    public void playButtonClick(View view){
+    public void playButtonClick(View view) {
         Intent intent = new Intent(this, GameWindow.class);
         startActivity(intent);
     }
+
+
 }
 
