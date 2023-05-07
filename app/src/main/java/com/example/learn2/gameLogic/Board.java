@@ -6,8 +6,7 @@ public class Board {
 	private final Player[][] boardData;
 	//Storing the size of the rows and columns in the array (we get this one from constructor)
 	private final int rowSize, columnSize;
-	// creating a default player 1, player 2 and player 3.
-	Player player1, player2, player3;
+	
 	
 	/**
 	 * public constructor that doesn't take anything and only intulize boardData and set row/coulmns to default
@@ -30,19 +29,20 @@ public class Board {
 	 * @param player          the player that will make the move for
 	 * @return true if it possible to make a move
 	 */
-	boolean boardMakeMove(int moveInputColumn, Player player) {
+	public int boardMakeMove(int moveInputColumn, Player player) {
+		
 		
 		int moveColumn = moveInputColumn - 1; // the coulmn that we will use inside the board (the place we play at)
 		int currentRow = rowSize - 1; // the value is the one we have inside the class
 		
 		// make sure we are in bound
 		if (moveColumn < 0 || moveColumn >= columnSize) {
-			return false;
+			return -1;
 		}
 		
 		if (boardData[currentRow][moveColumn] == null) { // check if the place to play is empty or not
 			boardData[currentRow][moveColumn] = player; // if empty then play on the board by changing to player
-			return true;
+			return currentRow;
 		} else {
 			// the curent row to keep track on where we are on the board
 			currentRow = rowSize - 1;
@@ -52,7 +52,7 @@ public class Board {
 				// check if we are out of bounds
 				if (currentRow <= 0) {
 					currentRow++;
-					return false;
+					return -1;
 				}
 				
 				// decrese the crurrent row by one to be used as counter to check the above row
@@ -65,13 +65,18 @@ public class Board {
 					// if empty then the player move on the board
 					boardData[currentRow][moveColumn] = player;
 					
-					return true; // the loop will stop after finding a none empty spot and printing the player
+					return currentRow; // the loop will stop after finding a none empty spot and printing the player
 					// move
 				}
 			}
 			
-			return false;
+			return -1;
 		}
+	}
+	
+	public boolean isColumnEmpty(int col) {
+		
+		return boardData[0][col] == null;
 	}
 	
 	/**
@@ -140,7 +145,7 @@ public class Board {
 	 *
 	 * @return return which player among the players won as player type
 	 */
-	Player win() {
+	public Player win() {
 		
 		// check for 4 pieces across for humanPlayer
 		for (int i = 0; i < boardData.length; i++) {
