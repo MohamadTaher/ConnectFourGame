@@ -68,7 +68,7 @@ public class GameBoardView extends View {
 				} else if (cells[i][j].getY() == cells[2][j].getY()) {
 					targetY = (int) (cells[i][j].getY() - (cells[i][j].getY() * 0.35));
 				} else {
-					circleDropSpeed = 50;
+					circleDropSpeed = 60;
 				}
 				currentY += circleDropSpeed;
 				canvas.drawCircle(cells[i][j].getCenterX(), currentY * 1.65f, cells[i][j].getRadius(), cells[i][j].getDrawingPaint());
@@ -81,11 +81,11 @@ public class GameBoardView extends View {
 			if (cells[i][j].getPlayerType() == humanPlayer) {
 				createToast("human drawn");
 				humanPlayed = true;
-			}
-			if (cells[i][j].getPlayerType() == randomPlayer) {
+			} else if (cells[i][j].getPlayerType() == randomPlayer) {
 				createToast("ai drawn");
-				humanPlayed = true;
+				humanPlayed = false;
 			}
+			printCellPlayerType();
 			
 		}
 		
@@ -96,11 +96,10 @@ public class GameBoardView extends View {
 		
 		if (event.getActionMasked() == MotionEvent.ACTION_DOWN && finishedDrawing) {
 			
-			//						if (createHumanPlayerMove(event)) {
-			//							return true;
-			//						}
-			
-			createRandomPlayerMove();
+			if (createHumanPlayerMove(event)) {
+				return true;
+			}
+			postDelayed(this::createRandomPlayerMove, 700);
 			
 			return true;
 		} else {
