@@ -3,9 +3,7 @@ package com.example.learn2;
 import android.graphics.Color;
 import android.graphics.Paint;
 
-import com.example.learn2.gameLogic.HumanPlayer;
 import com.example.learn2.gameLogic.Player;
-import com.example.learn2.gameLogic.RandomPlayer;
 
 public class Cell {
 	
@@ -14,27 +12,42 @@ public class Cell {
 	static Paint paint;
 	private static int lastRow;
 	private final int row, col;
-	HumanPlayer humanPlayer = new HumanPlayer();
-	RandomPlayer randomPlayer = new RandomPlayer();
-	private int cellSize;
 	private boolean occupied;
-	private int left, top;
+	private int cellSize, left, top;
 	private Player playerType;
-	
-	public Cell() {
-		this(6, 6);
-	}
 	
 	public Cell(int row, int col) {
 		this.row = row;
 		this.col = col;
 		playerType = null;
 		lastColumn = 0;
+		
 		paint = new Paint();
 		paint.setColor(Color.RED);
 		paint.setStyle(Paint.Style.FILL);
 		
 		this.occupied = false;
+	}
+	
+	public static void setHuman1LastPaint() {
+		paint.setColor(Color.RED);
+	}
+	
+	public static void setHuman2LastPaint() {
+		paint.setColor(Color.GREEN);
+	}
+	
+	public static void setAILastPaint() {
+		paint.setColor(Color.BLUE);
+	}
+	
+	public static Paint getLastPaint() {
+		return paint;
+	}
+	
+	public static void setLastMove(int row, int col) {
+		lastRow = row;
+		lastColumn = col;
 	}
 	
 	public static int getLastColumn() {
@@ -45,33 +58,36 @@ public class Cell {
 		return lastRow;
 	}
 	
-	public static void setLastMove(int row, int col) {
-		lastRow = row;
-		lastColumn = col;
+	public Paint getHumanPaint1() {
+		Paint humanPaint = new Paint();
+		humanPaint.setColor(Color.RED);
+		return humanPaint;
 	}
 	
-	public static Paint getLastPaint() {
-		return paint;
+	public Paint getHumanPaint2() {
+		Paint humanPaint = new Paint();
+		humanPaint.setColor(Color.GREEN);
+		return humanPaint;
 	}
 	
-	public static void setHumanPaint() {
-		paint.setColor(Color.RED);
+	public Paint getAIPaint() {
+		Paint paint1 = new Paint();
+		paint1.setColor(Color.BLUE);
+		return paint1;
 	}
 	
-	public static void setRandomPaint() {
-		paint.setColor(Color.BLUE);
+	public Paint getDrawingPaint() {
+		Paint tempPaint = new Paint();
+		tempPaint.setColor(Color.YELLOW);
+		return tempPaint;
 	}
 	
-	public int getCenterX() {
-		return this.getLeft() + this.getCenter();
+	public boolean isOccupied() {
+		return occupied;
 	}
 	
-	public int getCenterY() {
-		return this.getTop() + this.getCenter();
-	}
-	
-	public int getRadius() {
-		return ((int) ((this.getCellSize() / 2f) - (this.getCellSize() * 0.06f)));
+	public void setOccupied(boolean occupied) {
+		this.occupied = occupied;
 	}
 	
 	public Player getPlayerType() {
@@ -88,35 +104,26 @@ public class Cell {
 		this.cellSize = cellSize;
 	}
 	
-	public Paint getHumanPaint() {
-		Paint paint1 = new Paint();
-		paint1.setColor(Color.RED);
-		return paint1;
+	public int getCenterX() {
+		return this.getLeft() + this.getCenter();
 	}
 	
-	public Paint getRandomPaint() {
-		Paint paint1 = new Paint();
-		paint1.setColor(Color.BLUE);
-		return paint1;
+	public int getCenterY() {
+		return this.getTop() + this.getCenter();
 	}
 	
-	public Paint getDrawingPaint() {
-		Paint paint1 = new Paint();
-		paint1.setColor(Color.YELLOW);
-		return paint1;
+	public int getRadius() {
+		return ((int) ((this.getCellSize() / 2f) - (this.getCellSize() * 0.06f)));
 	}
 	
 	public int getCenter() {
 		return cellSize / 2;
 	}
 	
-	public int getX() {
-		if (row == 0) {
-			return getCenter();
-		} else {
-			return getCenter() * (col + 1);
-		}
+	public int getCellSize() {
+		return cellSize;
 	}
+	
 	
 	public int getY() {
 		if (row == 0) {
@@ -124,26 +131,6 @@ public class Cell {
 		} else {
 			return getCenter() * (row + 1);
 		}
-	}
-	
-	public int getCellSize() {
-		return cellSize;
-	}
-	
-	public int getRow() {
-		return row;
-	}
-	
-	public int getCol() {
-		return col;
-	}
-	
-	public boolean isOccupied() {
-		return occupied;
-	}
-	
-	public void setOccupied(boolean occupied) {
-		this.occupied = occupied;
 	}
 	
 	public int getLeft() {
@@ -161,5 +148,4 @@ public class Cell {
 	public int getBottom() {
 		return top + cellSize;
 	}
-	
 }
