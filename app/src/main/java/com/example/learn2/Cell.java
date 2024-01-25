@@ -6,7 +6,7 @@ import android.graphics.Paint;
 import com.example.learn2.gameLogic.Player;
 
 public class Cell {
-	
+
 	public static boolean lastMovePlayed = false;
 	static int lastColumn;
 	static Paint paint;
