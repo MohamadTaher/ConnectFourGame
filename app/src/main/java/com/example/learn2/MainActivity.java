@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
+    //setting up the main screen with the view
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -16,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //switching to gameview
     public void playButtonClick(View view) {
         Intent intent = new Intent(this, GameWindow.class);
         startActivity(intent);

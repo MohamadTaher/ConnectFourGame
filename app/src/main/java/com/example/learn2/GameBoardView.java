@@ -1,5 +1,6 @@
 package com.example.learn2;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -15,60 +16,80 @@ import android.widget.Toast;
 
 import com.example.learn2.gameLogic.Board;
 import com.example.learn2.gameLogic.HumanPlayer;
+import com.example.learn2.gameLogic.Player;
 import com.example.learn2.gameLogic.RandomPlayer;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
+//the game visualization and drawing
 public class GameBoardView extends View {
-	
-	private static final int NUM_ROWS = 8, NUM_COLUMNS = 8;
-	private final HumanPlayer humanPlayer1;
-	private final HumanPlayer humanPlayer2;
+
+	//creating variables that will used
+	private static final int NUM_ROWS = 3, NUM_COLUMNS = 3;
+	private final HumanPlayer humanPlayer1, humanPlayer2;
+	private final RandomPlayer randomPlayer;
+
 	private final Paint cellPaint, gridPaint;
 	private final Handler handler;
 	private final Runnable updateCircle = this::invalidate;
 	private final Cell[][] cells;
-	private final RandomPlayer randomPlayer;
 	private final Board boardObject;
 	private final RectF mRect;
-	private int targetY, currentY;
-	private int viewHeight;
+	private int viewHeight, targetY, currentY, column;
+
 	private boolean finishedDrawing;
-	
-	private boolean switcher;
-	
+	private Cell currentCell;
+
+	AtomicBoolean isTouchEnabled;
+
+	Player[] players;
+	int currentPlayerIndex = 0;
+
+	//initialize the variable and start the drawing when the view is created for the first time
 	public GameBoardView(Context context, AttributeSet attrs) {
 		super(context, attrs);
+
 		finishedDrawing = true;
-		switcher = false;
-		boardObject = new Board(NUM_ROWS, NUM_COLUMNS);
-		
-		Cell.lastColumn = 0;
+
 		humanPlayer1 = new HumanPlayer();
 		humanPlayer2 = new HumanPlayer();
 		randomPlayer = new RandomPlayer();
+
+		players = new Player[]{humanPlayer1, humanPlayer2, randomPlayer};
+
+
 		handler = new Handler();
+		isTouchEnabled = new AtomicBoolean(true);
+
+
 		mRect = new RectF();
+
+		boardObject = new Board(NUM_ROWS, NUM_COLUMNS);
 		cells = new Cell[NUM_ROWS][NUM_COLUMNS];
+
 		gridPaint = new Paint();
 		cellPaint = new Paint();
 		cellPaint.setColor(Color.WHITE);
 		gridPaint.setColor(Color.BLACK);
 		gridPaint.setStrokeWidth(3);
+
 		createCells();
 	}
 	
-	private void drawLastMovePlayed(Canvas canvas) {
-		
-		int circleDropSpeed = 35, i = Cell.getLastRow(), j = Cell.getLastColumn();
-		Cell currentCell = cells[i][j];
-		
-		if (Cell.lastMovePlayed && !finishedDrawing) {
+	private void drawLastMovePlayed(Canvas canvas, Cell currentCell) {
+
+		int circleDropSpeed = 35;
+
+
+
+		if (!finishedDrawing) {
 			
 			if (currentY < targetY) {
-				if (currentCell.getY() == cells[0][j].getY()) {
+				if (currentCell.getY() == cells[0][column].getY()) {
 					targetY = (int) (currentCell.getY() - (currentCell.getY() * 0.65));
-				} else if (currentCell.getY() == cells[1][j].getY()) {
+				} else if (currentCell.getY() == cells[1][column].getY()) {
 					targetY = (int) (currentCell.getY() - (currentCell.getY() * 0.5));
-				} else if (currentCell.getY() == cells[2][j].getY()) {
+				} else if (currentCell.getY() == cells[2][column].getY()) {
 					targetY = (int) (currentCell.getY() - (currentCell.getY() * 0.35));
 				} else {
 					circleDropSpeed = 60;
@@ -79,106 +100,93 @@ public class GameBoardView extends View {
 			} else {
 				canvas.drawCircle(currentCell.getCenterX(), currentCell.getCenterY(), currentCell.getRadius(), Cell.getLastPaint());
 				currentCell.setOccupied(true);
-				finishedDrawing = true;
+				finishedDrawing=true;
+
 			}
 			printCellPlayerType();
+
 		}
 	}
 	
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		
-		if (event.getActionMasked() == MotionEvent.ACTION_DOWN && finishedDrawing) {
-			
-			if (!switcher) {
-				if (createHumanPlayerMove(event, humanPlayer1)) {
-					return true;
-				}
-				switcher = true;
-			} else {
-				if (createHumanPlayerMove(event, humanPlayer2)) {
-					return true;
-				}
-				switcher = false;
+
+		if (event.getActionMasked() == MotionEvent.ACTION_DOWN && finishedDrawing && isTouchEnabled.get()) {
+			isTouchEnabled.set(false);
+
+			if (players[currentPlayerIndex] instanceof HumanPlayer) {
+				HumanPlayer humanPlayer = (HumanPlayer) players[currentPlayerIndex];
+				createPlayerMove(event, humanPlayer);
+				currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Circular array
 			}
-			//			postDelayed(this::createRandomPlayerMove, 700);
-			
-			return true;
-		} else {
-			return super.onTouchEvent(event);
+
+			postDelayed(() -> isTouchEnabled.set(true), 700); // Re-enable touch after 700ms
+
+			if (players[currentPlayerIndex] instanceof RandomPlayer) {
+				RandomPlayer randomPlayer = (RandomPlayer) players[currentPlayerIndex];
+				postDelayed(() -> createPlayerMove(null,randomPlayer), 700);
+				currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Circular array
+			}
+
 		}
+
+		return super.onTouchEvent(event);
+
 	}
 	
-	private boolean createHumanPlayerMove(MotionEvent event, HumanPlayer humanPlayer) {
-		
-		int madeRowMove;
-		if (boardObject.isColumnEmpty((int) (event.getX() / getWidth() * NUM_COLUMNS))) {
-			
-			if (humanPlayer == humanPlayer1) {
-				Cell.setHuman1LastPaint();
-			} else if (humanPlayer == humanPlayer2) {
-				Cell.setHuman2LastPaint();
-			}
-			
-			finishedDrawing = false;
-			Cell.lastColumn = (int) (event.getX() / getWidth() * NUM_COLUMNS);
-			currentY = -cells[0][Cell.lastColumn].getY();
-			
-			while (true) {
-				madeRowMove = boardObject.boardMakeMove(Cell.getLastColumn() + 1, humanPlayer);
-				if (madeRowMove != -1) {
-					
-					createToast("human created move");
-					
-					Cell.lastMovePlayed = true;
-					int humanColumn = Cell.lastColumn;
-					
-					createToast("human registered move");
-					
-					Cell.setLastMove(madeRowMove, Cell.getLastColumn());
-					updatePlayerTurnView("Human. row:" + madeRowMove + ", col:" + humanColumn);
-					targetY = cells[madeRowMove][humanColumn].getY();
-					cells[madeRowMove][humanColumn].setPlayerType(humanPlayer);
-					invalidate();
-					
-					return false;
+	private void createPlayerMove(MotionEvent event, Player player) {
+
+
+		finishedDrawing = false;
+
+		RandomPlayer randomPlayer;
+		HumanPlayer humanPlayer;
+
+		if (boardObject.isFull()){
+			createToast("Board is full");
+			return;
+		}
+
+		if (player instanceof HumanPlayer) {
+
+			column = (int) (event.getX() / getWidth() * NUM_COLUMNS);
+
+			humanPlayer = (HumanPlayer) player;
+
+			if (boardObject.isColumnEmpty(column)) {
+
+				if (humanPlayer == humanPlayer1) {
+					Cell.setHuman1LastPaint();
+				} else if (humanPlayer == humanPlayer2) {
+					Cell.setHuman2LastPaint();
 				}
 			}
-		} else return true;
-		
-	}
-	
-	private void createRandomPlayerMove() {
-		int madeRowMove;
-		
-		int randomColumn = randomPlayer.makePlayerMove(boardObject);
+		} else {
+			randomPlayer = (RandomPlayer) player;
+			do{
+				column = randomPlayer.makePlayerMove(boardObject);
+			}while (!boardObject.isColumnEmpty(column));
+			Cell.setAILastPaint();
+
+		}
+
+		currentY = -cells[0][column].getY();
+
+
 		while (true) {
-			if (!boardObject.isColumnEmpty(randomColumn)) {
-				randomColumn = randomPlayer.makePlayerMove(boardObject);
-			} else {
-				currentY = -cells[0][randomColumn].getY();
-				while (true) {
-					madeRowMove = boardObject.boardMakeMove(randomColumn + 1, randomPlayer);
-					if (madeRowMove != -1) {
-						createToast("ai created move");
-						finishedDrawing = false;
-						Cell.lastMovePlayed = true;
-						Cell.setAILastPaint();
-						Cell.setLastMove(madeRowMove, randomColumn);
-						updatePlayerTurnView("Random. row:" + madeRowMove + ", col:" + randomColumn);
-						Cell.setLastMove(madeRowMove, randomColumn);
-						targetY = cells[madeRowMove][randomColumn].getY();
-						cells[madeRowMove][randomColumn].setPlayerType(randomPlayer);
-						invalidate();
-						
-						break;
-					}
-				}
+			int madeRowMove = boardObject.boardMakeMove(column + 1, player);
+			if (madeRowMove != -1) {
+				targetY = cells[madeRowMove][column].getY();
+				currentCell = cells[madeRowMove][column];
+				invalidate();
 				return;
 			}
 		}
+
 	}
 	
+
 	private void drawOldBoard(Canvas canvas) {
 		
 		//drawBlueStars
@@ -201,6 +209,7 @@ public class GameBoardView extends View {
 			}
 			canvas.drawLine(x, 0, x, viewHeight, gridPaint);
 		}
+
 		for (int i = 0; i <= NUM_ROWS; i++) {
 			int y;
 			if (i == NUM_ROWS) {
@@ -213,16 +222,16 @@ public class GameBoardView extends View {
 			canvas.drawLine(0, y, cells[0][0].getCellSize() * NUM_COLUMNS, y, gridPaint);
 		}
 		
-		// drawOccupiedCells
+		//draw occupied cells
 		for (int i = 0; i < NUM_ROWS; i++) {
 			for (int j = 0; j < NUM_COLUMNS; j++) {
 				if (cells[i][j].isOccupied()) {
-					if (cells[i][j].getPlayerType() == humanPlayer1) {
+					if (boardObject.getPlayerAtLocation(i,j) == humanPlayer1) {
 						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getHumanPaint1());
-					} else if (cells[i][j].getPlayerType() == randomPlayer) {
-						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getAIPaint());
-					} else if (cells[i][j].getPlayerType() == humanPlayer2) {
+					} else if (boardObject.getPlayerAtLocation(i,j) == humanPlayer2) {
 						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getHumanPaint2());
+					} else if (boardObject.getPlayerAtLocation(i,j) == randomPlayer) {
+						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getAIPaint());
 					}
 				}
 			}
@@ -233,35 +242,16 @@ public class GameBoardView extends View {
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 		drawOldBoard(canvas);
-		drawLastMovePlayed(canvas);
+		drawLastMovePlayed(canvas, currentCell);
 	}
 	
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		int cellSize = Math.min(MeasureSpec.getSize(widthMeasureSpec) / NUM_COLUMNS, MeasureSpec.getSize(heightMeasureSpec) / NUM_ROWS);
 		int width = cellSize * NUM_COLUMNS;
-		int height = cellSize * NUM_ROWS;
+		viewHeight = cellSize * NUM_ROWS;
 		updateCellSizes(cellSize);
-		viewHeight = height;
 		setMeasuredDimension(width, viewHeight);
-	}
-	
-	private void printCellPlayerType() {
-		StringBuilder temp = new StringBuilder();
-		for (int i = 0; i < NUM_ROWS; i++) {
-			for (int j = 0; j < NUM_COLUMNS; j++) {
-				if (cells[i][j].getPlayerType() == humanPlayer1) {
-					temp.append("X ");
-				} else if (cells[i][j].getPlayerType() == randomPlayer) {
-					temp.append("O ");
-				} else {
-					temp.append("_ ");
-				}
-			}
-			temp.append("\n");
-		}
-		updatePlayerTurnView(temp.toString());
-		
 	}
 	
 	private void createCells() {
@@ -271,7 +261,7 @@ public class GameBoardView extends View {
 			}
 		}
 	}
-	
+
 	private void updateCellSizes(int cellSize) {
 		for (int row = 0; row < NUM_ROWS; row++) {
 			for (int col = 0; col < NUM_COLUMNS; col++) {
@@ -279,15 +269,30 @@ public class GameBoardView extends View {
 			}
 		}
 	}
-	
+
 	private void createToast(String output) {
 		Toast toast = Toast.makeText(getContext(), output, Toast.LENGTH_SHORT);
 		toast.show();
 	}
-	
-	private void updatePlayerTurnView(String input) {
+
+	private void printCellPlayerType() {
+		StringBuilder temp = new StringBuilder();
+		for (int i = 0; i < NUM_ROWS; i++) {
+			for (int j = 0; j < NUM_COLUMNS; j++) {
+				if (boardObject.getPlayerAtLocation(i,j) == humanPlayer1) {
+					temp.append("X ");
+				} else if (boardObject.getPlayerAtLocation(i,j) == randomPlayer) {
+					temp.append("y ");
+				} else {
+					temp.append("0 ");
+				}
+			}
+			temp.append("\n");
+		}
 		TextView textView = ((Activity) getContext()).findViewById(R.id.textView);
-		textView.setText(input);
-		
+		textView.setText(temp.toString());
+
 	}
+
+
 }

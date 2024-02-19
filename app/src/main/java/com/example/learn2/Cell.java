@@ -3,61 +3,48 @@ package com.example.learn2;
 import android.graphics.Color;
 import android.graphics.Paint;
 
-import com.example.learn2.gameLogic.Player;
-
 public class Cell {
 
-	public static boolean lastMovePlayed = false;
-	static int lastColumn;
+
 	static Paint paint;
-	private static int lastRow;
 	private final int row, col;
 	private boolean occupied;
 	private int cellSize, left, top;
-	private Player playerType;
-	
+
 	public Cell(int row, int col) {
 		this.row = row;
 		this.col = col;
-		playerType = null;
-		lastColumn = 0;
-		
+
 		paint = new Paint();
 		paint.setColor(Color.RED);
 		paint.setStyle(Paint.Style.FILL);
 		
 		this.occupied = false;
 	}
-	
+
+	public boolean isOccupied() {
+		return occupied;
+	}
+
+	public void setOccupied(boolean occupied) {
+		this.occupied = occupied;
+	}
+
 	public static void setHuman1LastPaint() {
 		paint.setColor(Color.RED);
 	}
-	
+
 	public static void setHuman2LastPaint() {
 		paint.setColor(Color.GREEN);
 	}
-	
+
 	public static void setAILastPaint() {
 		paint.setColor(Color.BLUE);
 	}
-	
+
 	public static Paint getLastPaint() {
 		return paint;
 	}
-	
-	public static void setLastMove(int row, int col) {
-		lastRow = row;
-		lastColumn = col;
-	}
-	
-	public static int getLastColumn() {
-		return lastColumn;
-	}
-	
-	public static int getLastRow() {
-		return lastRow;
-	}
-	
 	public Paint getHumanPaint1() {
 		Paint humanPaint = new Paint();
 		humanPaint.setColor(Color.RED);
@@ -81,23 +68,7 @@ public class Cell {
 		tempPaint.setColor(Color.YELLOW);
 		return tempPaint;
 	}
-	
-	public boolean isOccupied() {
-		return occupied;
-	}
-	
-	public void setOccupied(boolean occupied) {
-		this.occupied = occupied;
-	}
-	
-	public Player getPlayerType() {
-		return playerType;
-	}
-	
-	public void setPlayerType(Player playerType) {
-		this.playerType = playerType;
-	}
-	
+
 	public void updateCellSize(int cellSize) {
 		this.left = col * cellSize;
 		this.top = row * cellSize;
@@ -123,7 +94,6 @@ public class Cell {
 	public int getCellSize() {
 		return cellSize;
 	}
-	
 	
 	public int getY() {
 		if (row == 0) {

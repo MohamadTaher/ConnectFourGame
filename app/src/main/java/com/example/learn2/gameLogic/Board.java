@@ -2,17 +2,18 @@ package com.example.learn2.gameLogic;
 
 public class Board {
 	
-	//The default two demntion boardData that holds players
+	//The default two demintion boardData that holds players
 	private final Player[][] boardData;
+
 	//Storing the size of the rows and columns in the array (we get this one from constructor)
 	private final int rowSize, columnSize;
-	
-	
+
+
 	/**
-	 * public constructor that doesn't take anything and only intulize boardData and set row/coulmns to default
+	 * public constructor that doesn't take anything and only initialize boardData and set row/columns to default
 	 *
 	 * @param rowSize    the rows I will take as the board length
-	 * @param columnSize the rows I will take as the board wideth
+	 * @param columnSize the rows I will take as the board width
 	 */
 	public Board(int rowSize, int columnSize) {
 		this.rowSize = rowSize;
@@ -27,7 +28,7 @@ public class Board {
 	 *
 	 * @param moveInputColumn the coulmn we will make the move at
 	 * @param player          the player that will make the move for
-	 * @return true if it possible to make a move
+	 * @return currentRow if it possible to make a move
 	 */
 	public int boardMakeMove(int moveInputColumn, Player player) {
 		
@@ -73,9 +74,9 @@ public class Board {
 			return -1;
 		}
 	}
-	
+
+	//check if the column is empty
 	public boolean isColumnEmpty(int col) {
-		
 		return boardData[0][col] == null;
 	}
 	
@@ -181,6 +182,19 @@ public class Board {
 			}
 		}
 		return null;
+	}
+
+	public boolean isFull() {
+
+		for (int i = 0; i < rowSize; i++) {
+			for (int j = 0; j < columnSize; j++) {
+				if(boardData[i][j] == null){
+					return false;
+				}
+			}
+		}
+		return true;
+
 	}
 }
 
