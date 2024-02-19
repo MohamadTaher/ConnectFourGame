@@ -144,7 +144,7 @@ public class GameBoardView extends View {
 		HumanPlayer humanPlayer;
 
 		if (boardObject.isFull()){
-			createToast("Board is full");
+			createToast();
 			return;
 		}
 
@@ -270,8 +270,8 @@ public class GameBoardView extends View {
 		}
 	}
 
-	private void createToast(String output) {
-		Toast toast = Toast.makeText(getContext(), output, Toast.LENGTH_SHORT);
+	private void createToast() {
+		Toast toast = Toast.makeText(getContext(), "Board is full", Toast.LENGTH_SHORT);
 		toast.show();
 	}
 
