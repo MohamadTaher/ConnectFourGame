@@ -3,6 +3,7 @@ package com.example.learn2;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -25,9 +26,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class GameBoardView extends View {
 
 	//creating variables that will used
-	private static final int NUM_ROWS = 3, NUM_COLUMNS = 3;
-	private final HumanPlayer humanPlayer1, humanPlayer2;
-	private final RandomPlayer randomPlayer;
+	private final int NUM_ROWS,NUM_COLUMNS;
+	private final HumanPlayer humanPlayer1, humanPlayer2, humanPlayer3;
+	private final RandomPlayer randomPlayer, randomPlayer2;
 
 	private final Paint cellPaint, gridPaint;
 	private final Handler handler;
@@ -49,18 +50,63 @@ public class GameBoardView extends View {
 	public GameBoardView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
-		finishedDrawing = true;
+		Intent intent = ((Activity) context).getIntent();
+
+		NUM_ROWS = NUM_COLUMNS =  intent.getIntExtra("gridSize", 6);
+
+		int humanPlayerCount = intent.getIntExtra("humanSize",2);
+		int randomPlayerCount = intent.getIntExtra("AISize",1);
 
 		humanPlayer1 = new HumanPlayer();
 		humanPlayer2 = new HumanPlayer();
+		humanPlayer3 = new HumanPlayer();
 		randomPlayer = new RandomPlayer();
+		randomPlayer2 = new RandomPlayer();
 
 		players = new Player[]{humanPlayer1, humanPlayer2, randomPlayer};
 
+//		players = new Player[humanPlayerCount+randomPlayerCount];
+//		switch (humanPlayerCount){
+//
+//			case 1:
+//				createToast(""+humanPlayerCount);
+//				players[0] = humanPlayer1;
+//				break;
+//			case 2:
+//				createToast(""+humanPlayerCount);
+//				players[0] = humanPlayer1;
+//				players[1] = humanPlayer2;
+//				break;
+//			case 3:
+//				createToast(""+humanPlayerCount);
+//				players[0] = humanPlayer1;
+//				players[1] = humanPlayer2;
+//				players[2] = humanPlayer3;
+//				break;
+//			default:
+//				createToast("Default "+humanPlayerCount);
+//		}
+//
+//		switch (randomPlayerCount){
+//
+//			case 0:
+//				createToast(""+humanPlayerCount);
+//				break;
+//			case 1:
+//				createToast(""+humanPlayerCount);
+//				players[players.length-1] = randomPlayer;
+//				break;
+//			case 2:
+//				createToast(""+humanPlayerCount);
+//				players[players.length-1] = randomPlayer;
+//				players[players.length-2] = randomPlayer2;
+//				break;
+//			default:
+//				createToast("Default "+randomPlayerCount);
+//		}
 
 		handler = new Handler();
 		isTouchEnabled = new AtomicBoolean(true);
-
 
 		mRect = new RectF();
 
@@ -73,9 +119,11 @@ public class GameBoardView extends View {
 		gridPaint.setColor(Color.BLACK);
 		gridPaint.setStrokeWidth(3);
 
+		finishedDrawing = true;
 		createCells();
 	}
-	
+
+
 	private void drawLastMovePlayed(Canvas canvas, Cell currentCell) {
 
 		int circleDropSpeed = 35;
@@ -144,7 +192,7 @@ public class GameBoardView extends View {
 		HumanPlayer humanPlayer;
 
 		if (boardObject.isFull()){
-			createToast();
+			createToast("Board is full");
 			return;
 		}
 
@@ -270,8 +318,8 @@ public class GameBoardView extends View {
 		}
 	}
 
-	private void createToast() {
-		Toast toast = Toast.makeText(getContext(), "Board is full", Toast.LENGTH_SHORT);
+	private void createToast(String output) {
+		Toast toast = Toast.makeText(getContext(), output, Toast.LENGTH_SHORT);
 		toast.show();
 	}
 
