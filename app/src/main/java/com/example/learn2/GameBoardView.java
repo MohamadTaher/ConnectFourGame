@@ -28,23 +28,24 @@ public class GameBoardView extends View {
 	//creating variables that will used
 	private final int NUM_ROWS,NUM_COLUMNS;
 	private final HumanPlayer humanPlayer1, humanPlayer2, humanPlayer3;
-	private final RandomPlayer randomPlayer, randomPlayer2;
+	private final RandomPlayer randomPlayer1, randomPlayer2;
 
-	private final Paint cellPaint, gridPaint;
-	private final Handler handler;
-	private final Runnable updateCircle = this::invalidate;
 	private final Cell[][] cells;
 	private final Board boardObject;
-	private final RectF mRect;
-	private int viewHeight, targetY, currentY, column;
 
-	private boolean finishedDrawing;
+	private int viewHeight, targetY, currentY, column;
+	int currentPlayerIndex = 0;
+
+	private boolean finishedDrawing, specialCase;
 	private Cell currentCell;
 
 	AtomicBoolean isTouchEnabled;
+	int i =0;
+
+	Handler handler;
+
 
 	Player[] players;
-	int currentPlayerIndex = 0;
 
 	//initialize the variable and start the drawing when the view is created for the first time
 	public GameBoardView(Context context, AttributeSet attrs) {
@@ -54,70 +55,77 @@ public class GameBoardView extends View {
 
 		NUM_ROWS = NUM_COLUMNS =  intent.getIntExtra("gridSize", 6);
 
-		int humanPlayerCount = intent.getIntExtra("humanSize",2);
-		int randomPlayerCount = intent.getIntExtra("AISize",1);
+		int humanPlayerCount = intent.getIntExtra("humanSize",2), randomPlayerCount = intent.getIntExtra("AISize",1);
 
 		humanPlayer1 = new HumanPlayer();
 		humanPlayer2 = new HumanPlayer();
 		humanPlayer3 = new HumanPlayer();
-		randomPlayer = new RandomPlayer();
+		randomPlayer1 = new RandomPlayer();
 		randomPlayer2 = new RandomPlayer();
 
-		players = new Player[]{humanPlayer1, humanPlayer2, randomPlayer};
+		players = new Player[(humanPlayerCount + randomPlayerCount)];
 
-//		players = new Player[humanPlayerCount+randomPlayerCount];
-//		switch (humanPlayerCount){
-//
-//			case 1:
-//				createToast(""+humanPlayerCount);
-//				players[0] = humanPlayer1;
-//				break;
-//			case 2:
-//				createToast(""+humanPlayerCount);
-//				players[0] = humanPlayer1;
-//				players[1] = humanPlayer2;
-//				break;
-//			case 3:
-//				createToast(""+humanPlayerCount);
-//				players[0] = humanPlayer1;
-//				players[1] = humanPlayer2;
-//				players[2] = humanPlayer3;
-//				break;
-//			default:
-//				createToast("Default "+humanPlayerCount);
-//		}
-//
-//		switch (randomPlayerCount){
-//
-//			case 0:
-//				createToast(""+humanPlayerCount);
-//				break;
-//			case 1:
-//				createToast(""+humanPlayerCount);
-//				players[players.length-1] = randomPlayer;
-//				break;
-//			case 2:
-//				createToast(""+humanPlayerCount);
-//				players[players.length-1] = randomPlayer;
-//				players[players.length-2] = randomPlayer2;
-//				break;
-//			default:
-//				createToast("Default "+randomPlayerCount);
-//		}
-
+		specialCase = false;
 		handler = new Handler();
+
+
+		switch (humanPlayerCount){
+			case 1:
+				players[0] = humanPlayer1;
+				break;
+			case 2:
+				players[0] = humanPlayer1;
+				players[1] = humanPlayer2;
+				break;
+			case 3:
+				players[0] = humanPlayer1;
+				players[1] = humanPlayer2;
+				players[2] = humanPlayer3;
+				break;
+			default:
+		}
+
+		switch (randomPlayerCount){
+			case 1:
+				players[players.length-1] = randomPlayer1;
+				break;
+			case 2:
+				switch (humanPlayerCount){
+					case 1:
+						players[0] = humanPlayer1;
+						players[1] = randomPlayer1;
+						players[2] = randomPlayer2;
+						specialCase = true;
+						break;
+					case 2:
+						players[0] = humanPlayer1;
+						players[1] = randomPlayer1;
+						players[2] = humanPlayer2;
+						players[3] = randomPlayer2;
+						break;
+					case 3:
+						players[0] = humanPlayer1;
+						players[1] = randomPlayer1;
+						players[2] = humanPlayer2;
+						players[3] = randomPlayer2;
+						players[4] = humanPlayer3;
+
+						break;
+					default:
+				}
+
+				break;
+			default:
+		}
+
 		isTouchEnabled = new AtomicBoolean(true);
 
-		mRect = new RectF();
 
 		boardObject = new Board(NUM_ROWS, NUM_COLUMNS);
 		cells = new Cell[NUM_ROWS][NUM_COLUMNS];
 
-		gridPaint = new Paint();
-		cellPaint = new Paint();
-		cellPaint.setColor(Color.WHITE);
-		gridPaint.setColor(Color.BLACK);
-		gridPaint.setStrokeWidth(3);
+
+
 
 		finishedDrawing = true;
 		createCells();
@@ -129,9 +137,11 @@ public class GameBoardView extends View {
 		int circleDropSpeed = 35;
 
 
+		Runnable updateCircle = this::invalidate;
+
 
 		if (!finishedDrawing) {
-			
+
 			if (currentY < targetY) {
 				if (currentCell.getY() == cells[0][column].getY()) {
 					targetY = (int) (currentCell.getY() - (currentCell.getY() * 0.65));
@@ -143,19 +153,21 @@ public class GameBoardView extends View {
 					circleDropSpeed = 60;
 				}
 				currentY += circleDropSpeed;
-				canvas.drawCircle(currentCell.getCenterX(), currentY * 1.65f, currentCell.getRadius(), currentCell.getDrawingPaint());
+				canvas.drawCircle(currentCell.getCenterX(), currentY * 1.65f, currentCell.getRadius(), Cell.getLastPaint());
 				handler.postDelayed(updateCircle, 13); // wait for 16 milliseconds before redrawing the view
 			} else {
 				canvas.drawCircle(currentCell.getCenterX(), currentCell.getCenterY(), currentCell.getRadius(), Cell.getLastPaint());
 				currentCell.setOccupied(true);
 				finishedDrawing=true;
 
+
+
 			}
 			printCellPlayerType();
 
 		}
 	}
-	
+
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
@@ -171,18 +183,40 @@ public class GameBoardView extends View {
 
 			postDelayed(() -> isTouchEnabled.set(true), 700); // Re-enable touch after 700ms
 
-			if (players[currentPlayerIndex] instanceof RandomPlayer) {
-				RandomPlayer randomPlayer = (RandomPlayer) players[currentPlayerIndex];
-				postDelayed(() -> createPlayerMove(null,randomPlayer), 700);
-				currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Circular array
+
+
+			if (players[currentPlayerIndex] instanceof RandomPlayer) { //random player 1
+				if (players[(currentPlayerIndex + 1) % players.length] instanceof RandomPlayer) {
+					createToast("Two"+currentPlayerIndex);
+
+					RandomPlayer randomPlayer = (RandomPlayer) players[currentPlayerIndex];
+					postDelayed(() -> createPlayerMove(null, randomPlayer), 800);
+					currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Circular array
+					createToast("three"+currentPlayerIndex);
+
+					//Bug here right now.
+					RandomPlayer randomPlayer2 = (RandomPlayer) players[currentPlayerIndex];
+					postDelayed(() -> createPlayerMove(null, randomPlayer2), 800);
+					currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Circular array
+					createToast("three" + currentPlayerIndex);
+
+
+				}else { //random player 2
+					createToast("One");
+					RandomPlayer randomPlayer2 = (RandomPlayer) players[currentPlayerIndex];
+					postDelayed(() -> createPlayerMove(null,randomPlayer2), 800);
+					currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Circular array
+				}
+				postDelayed(() -> isTouchEnabled.set(true), 700); // Re-enable touch after 700ms
+
+
 			}
 
 		}
-
 		return super.onTouchEvent(event);
 
 	}
-	
+
 	private void createPlayerMove(MotionEvent event, Player player) {
 
 
@@ -208,6 +242,8 @@ public class GameBoardView extends View {
 					Cell.setHuman1LastPaint();
 				} else if (humanPlayer == humanPlayer2) {
 					Cell.setHuman2LastPaint();
+				} else {
+					Cell.setHuman3LastPaint();
 				}
 			}
 		} else {
@@ -215,7 +251,12 @@ public class GameBoardView extends View {
 			do{
 				column = randomPlayer.makePlayerMove(boardObject);
 			}while (!boardObject.isColumnEmpty(column));
-			Cell.setAILastPaint();
+
+			if (randomPlayer == randomPlayer1) {
+				Cell.setAI1LastPaint();
+			} else if (randomPlayer == randomPlayer2) {
+				Cell.setAI2LastPaint();
+			}
 
 		}
 
@@ -233,17 +274,26 @@ public class GameBoardView extends View {
 		}
 
 	}
-	
+
 
 	private void drawOldBoard(Canvas canvas) {
-		
+
+		RectF mRect = new RectF();
+
+		Paint gridPaint = new Paint();
+		gridPaint.setColor(Color.BLACK);
+		gridPaint.setStrokeWidth(3);
+
+		Paint cellBackGroundPaint = new Paint();
+		cellBackGroundPaint.setColor(Color.WHITE);
+
 		//drawBlueStars
 		float mCornerRadius = 20f;
 		for (int i = 0; i < NUM_ROWS; i++) {
 			for (int j = 0; j < NUM_COLUMNS; j++) {
 				Cell cell = cells[i][j];
 				mRect.set(cell.getLeft(), cell.getTop(), cell.getRight(), cell.getBottom());
-				canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, cellPaint);
+				canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, cellBackGroundPaint);
 			}
 		}
 		
@@ -278,8 +328,12 @@ public class GameBoardView extends View {
 						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getHumanPaint1());
 					} else if (boardObject.getPlayerAtLocation(i,j) == humanPlayer2) {
 						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getHumanPaint2());
-					} else if (boardObject.getPlayerAtLocation(i,j) == randomPlayer) {
-						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getAIPaint());
+					} else if (boardObject.getPlayerAtLocation(i,j) == humanPlayer3) {
+						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getHumanPaint3());
+					} else if (boardObject.getPlayerAtLocation(i,j) == randomPlayer1) {
+						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getAI1Paint());
+					} else if (boardObject.getPlayerAtLocation(i,j) == randomPlayer2) {
+						canvas.drawCircle(cells[i][j].getCenterX(), cells[i][j].getCenterY(), cells[i][j].getRadius(), cells[i][j].getAI2Paint());
 					}
 				}
 			}
@@ -329,11 +383,15 @@ public class GameBoardView extends View {
 			for (int j = 0; j < NUM_COLUMNS; j++) {
 				if (boardObject.getPlayerAtLocation(i,j) == humanPlayer1) {
 					temp.append("X ");
-				} else if (boardObject.getPlayerAtLocation(i,j) == randomPlayer) {
-					temp.append("y ");
-				} else {
-					temp.append("0 ");
-				}
+				} else if (boardObject.getPlayerAtLocation(i,j) == humanPlayer2) {
+					temp.append("Y ");
+				} else if (boardObject.getPlayerAtLocation(i,j) == humanPlayer3) {
+					temp.append("Z ");
+				} else if (boardObject.getPlayerAtLocation(i,j) == randomPlayer1) {
+					temp.append("R ");
+				} else if (boardObject.getPlayerAtLocation(i,j) == randomPlayer2) {
+					temp.append("T ");
+				}else temp.append("0 ");
 			}
 			temp.append("\n");
 		}
