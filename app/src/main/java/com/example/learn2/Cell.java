@@ -11,6 +11,8 @@ public class Cell {
 	private boolean occupied;
 	private int cellSize, left, top;
 
+
+
 	public Cell(int row, int col) {
 		this.row = row;
 		this.col = col;
