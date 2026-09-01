@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (defaults to v<versionName> from app/build.gradle)'
+        required: false
+        type: string
+      prerelease:
+        description: 'Mark the GitHub release as a pre-release'
+        required: false
+        default: false
+        type: boolean
+      draft:
+        description: 'Create the GitHub release as a draft'
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags:
+      - v*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build release APK
+    runs-on: 'ubuntu-24.04'
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Resolve tag name
+        id: tag
+        run: |
+          set -e
+
+          if [ "${GITHUB_REF}" != "${GITHUB_REF#refs/tags/}" ]; then
+            tag="${GITHUB_REF#refs/tags/}"
+          elif [ -n "${{ inputs.tag }}" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            version=$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle | head -n1)
+            tag="v${version}"
+          fi
+
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "Releasing as ${tag}"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Accept Android SDK licences
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build
+        run: ./gradlew assembleRelease
+        env:
+          # When no signing secrets are configured the release build falls back to
+          # the debug keystore, so the APK is still installable.
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Rename APK
+        run: |
+          set -e
+
+          tag="${{ steps.tag.outputs.tag }}"
+          mv app/build/outputs/apk/release/app-release.apk "connect-four-${tag}.apk"
+          sha256sum "connect-four-${tag}.apk" | tee "checksums-${tag}.sha256"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: connect-four-release
+          path: |
+            connect-four-*.apk
+            checksums-*.sha256
+
+  release:
+    name: Create GitHub Release
+    runs-on: 'ubuntu-24.04'
+    needs: build
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: connect-four-release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build.outputs.tag }}
+          name: Connect Four ${{ needs.build.outputs.tag }}
+          body: |
+            Release build of Connect Four ${{ needs.build.outputs.tag }}, built from `${{ github.sha }}`.
+
+            Install `connect-four-${{ needs.build.outputs.tag }}.apk` on any device running Android 8.0 (API 26) or newer.
+
+            SHA-256 checksums are attached as `checksums-${{ needs.build.outputs.tag }}.sha256`.
+          files: |
+            connect-four-*.apk
+            checksums-*.sha256
+          draft: ${{ inputs.draft || false }}
+          prerelease: ${{ inputs.prerelease || false }}
+          token: ${{ secrets.GITHUB_TOKEN }}
