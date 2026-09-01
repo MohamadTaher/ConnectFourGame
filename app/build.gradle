@@ -16,10 +16,31 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Set by CI when release signing secrets are configured; otherwise the release
+    // build falls back to the debug keystore so the APK is still installable.
+    def releaseKeyBase64 = System.getenv("SIGNING_KEY")
+
+    signingConfigs {
+        release {
+            if (releaseKeyBase64) {
+                def keystore = new File(project.layout.buildDirectory.get().asFile, "release.keystore")
+                keystore.parentFile.mkdirs()
+                keystore.bytes = releaseKeyBase64.trim().decodeBase64()
+
+                storeFile keystore
+                storePassword System.getenv("KEY_STORE_PASSWORD")
+                keyAlias System.getenv("ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            signingConfig releaseKeyBase64 ? signingConfigs.release : signingConfigs.debug
         }
     }
     compileOptions {
